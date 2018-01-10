@@ -67,21 +67,26 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 // There is no accounting for clock skew.
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
-func (m MapClaims) Valid() error {
+func (m MapClaims) Valid(opts *ValidationOptions) error {
 	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 
-	if m.VerifyExpiresAt(now, false) == false {
+	var leeway int64
+	if opts != nil {
+		leeway = opts.Leeway
+	}
+
+	if m.VerifyExpiresAt(now-leeway, false) == false {
 		vErr.Inner = errors.New("Token is expired")
 		vErr.Errors |= ValidationErrorExpired
 	}
 
-	if m.VerifyIssuedAt(now, false) == false {
+	if m.VerifyIssuedAt(now+leeway, false) == false {
 		vErr.Inner = errors.New("Token used before issued")
 		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
-	if m.VerifyNotBefore(now, false) == false {
+	if m.VerifyNotBefore(now+leeway, false) == false {
 		vErr.Inner = errors.New("Token is not valid yet")
 		vErr.Errors |= ValidationErrorNotValidYet
 	}

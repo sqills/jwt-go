@@ -54,6 +54,15 @@ var jwtTestData = []struct {
 		nil,
 	},
 	{
+		"expiration leeway",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 1)},
+		true,
+		0,
+		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10}},
+	},
+	{
 		"basic nbf",
 		"", // autogen
 		defaultKeyFunc,
@@ -61,6 +70,15 @@ var jwtTestData = []struct {
 		false,
 		jwt.ValidationErrorNotValidYet,
 		nil,
+	},
+	{
+		"nbf leeway",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 1)},
+		true,
+		0,
+		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10}},
 	},
 	{
 		"expired and nbf",
@@ -146,6 +164,18 @@ var jwtTestData = []struct {
 		&jwt.Parser{UseJSONNumber: true},
 	},
 	{
+		"Standard Claims - leeway",
+		"",
+		defaultKeyFunc,
+		&jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(-time.Second).Unix(),
+			NotBefore: time.Now().Add(time.Second).Unix(),
+		},
+		true,
+		0,
+		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10}},
+	},
+	{
 		"JSON Number - basic expired",
 		"", // autogen
 		defaultKeyFunc,
@@ -171,6 +201,28 @@ var jwtTestData = []struct {
 		false,
 		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
 		&jwt.Parser{UseJSONNumber: true},
+	},
+	{
+		"Issued at - leeway (past)",
+		"",
+		defaultKeyFunc,
+		&jwt.StandardClaims{
+			IssuedAt: time.Now().Add(5 * time.Second).Unix(),
+		},
+		true,
+		0,
+		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10}},
+	},
+	{
+		"Issued at - leeway (future)",
+		"",
+		defaultKeyFunc,
+		&jwt.StandardClaims{
+			IssuedAt: time.Now().Add(-5 * time.Second).Unix(),
+		},
+		true,
+		0,
+		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10}},
 	},
 }
 
